@@ -1,0 +1,67 @@
+<div class="dashboard">
+  <!-- Prima RIGA: Form -->
+  <div class="row">
+    <p>Dashboard</p>
+  </div>
+  <div class="row form-section">
+    <form
+      [formGroup]="dateRangeForm"
+      (ngSubmit)="onSubmitDateRange()"
+      class="date-form"
+    >
+      <label for="startDate">Data Inizio</label>
+      <input type="date" id="startDate" formControlName="startDate" />
+      <label for="endDate">Data Fine</label>
+      <input type="date" id="endDate" formControlName="endDate" />
+      <button type="submit" [disabled]="!dateRangeForm.valid">Applica</button>
+    </form>
+  </div>
+
+  <!-- Seconda RIGA: Grafici e recap -->
+  <div class="row charts-recap-section">
+    <div class="stat-box">
+      <h3>Chiamate Totali</h3>
+      <p>250231</p>
+    </div>
+    <div class="stat-box">
+      <h3>Errori Totali</h3>
+      <p>2321</p>
+    </div>
+    <div class="stat-box">
+      <h3>Tempo Risposta Medio</h3>
+      <p>250ms</p>
+    </div>
+    <div class="chart">
+      <!-- <canvas
+        chartjs
+        [data]="lineChartData"
+        [options]="lineChartOptions"
+      ></canvas> -->
+      <p>Chiamate nel tempo</p>
+    </div>
+    <div class="chart">
+      <!-- <canvas
+        chartjs
+        [data]="pieChartData"
+        [options]="pieChartOptions"
+      ></canvas> -->
+      <p>Percentuale Errori</p>
+    </div>
+    <div class="chart">
+      <!-- <canvas
+        chartjs
+        [data]="barChartData"
+        [options]="barChartOptions"
+      ></canvas> -->
+      <p>Distribuzione Valori</p>
+    </div>
+  </div>
+
+  <!-- Terza RIGA: Log -->
+  <div class="row log-section">
+    <h3>Log</h3>
+    <ul>
+      <li *ngFor="let log of logs">{{ log }}</li>
+    </ul>
+  </div>
+</div>
