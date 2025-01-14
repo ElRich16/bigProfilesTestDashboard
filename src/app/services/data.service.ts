@@ -1,15 +1,16 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-
+import { Observable } from 'rxjs';
+import { ValueResponse } from '../models/models';
 @Injectable({
   providedIn: 'root',
 })
 export class DataService {
-  baseUrl = `${environment.baseUrl}/api/v1/retrieve`;
+  private baseUrl = `${environment.baseUrl}/api/v1/retrieve`;
   constructor(private http: HttpClient) {}
 
-  getDatas(from: Date, to: Date) {
+  getDatas(from: Date, to: Date): Observable<ValueResponse> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       Authorization: 'BigProfiles-API',
@@ -18,14 +19,6 @@ export class DataService {
     const params = new HttpParams()
       .append('date_from', from.toISOString())
       .append('date_to', to.toISOString());
-
-    this.http.get(this.baseUrl, { headers, params }).subscribe(
-      (res) => {
-        console.log('Dati ricevuti:', res);
-      },
-      (error) => {
-        console.error('Errore:', error);
-      }
-    );
+    return this.http.get<ValueResponse>(this.baseUrl, { headers, params });
   }
 }

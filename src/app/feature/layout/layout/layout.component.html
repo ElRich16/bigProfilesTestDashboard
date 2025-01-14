@@ -4,32 +4,36 @@
     <p>Dashboard</p>
   </div>
   <div class="row form-section">
-    <form
-      [formGroup]="dateRangeForm"
-      (ngSubmit)="onSubmitDateRange()"
-      class="date-form"
-    >
-      <label for="startDate">Data Inizio</label>
-      <input type="date" id="startDate" formControlName="startDate" />
-      <label for="endDate">Data Fine</label>
-      <input type="date" id="endDate" formControlName="endDate" />
-      <button type="submit" [disabled]="!dateRangeForm.valid">Applica</button>
-    </form>
+    <label for="startDate">Data Inizio</label>
+    <input
+      #startDate
+      type="datetime-local"
+      id="startDate"
+      (change)="changeDateRange(startDate, endDate)"
+    />
+    <label for="endDate">Data Fine</label>
+    <input
+      #endDate
+      type="datetime-local"
+      id="endDate"
+      (change)="changeDateRange(startDate, endDate)"
+    />
   </div>
-
+  @if(data$ | async; as data) {
+  <div>{{ data | json }}</div>
   <!-- Seconda RIGA: Grafici e recap -->
   <div class="row charts-recap-section">
     <div class="stat-box">
       <h3>Chiamate Totali</h3>
-      <p>250231</p>
+      <p>{{ data.totalRequests }}</p>
     </div>
     <div class="stat-box">
       <h3>Errori Totali</h3>
-      <p>2321</p>
+      <p>{{ data.totalErrors }}</p>
     </div>
     <div class="stat-box">
       <h3>Tempo Risposta Medio</h3>
-      <p>250ms</p>
+      <p>{{ data.averageResponseTime }}</p>
     </div>
     <div class="chart">
       <!-- <canvas
@@ -48,20 +52,25 @@
       <p>Percentuale Errori</p>
     </div>
     <div class="chart">
-      <!-- <canvas
-        chartjs
-        [data]="barChartData"
-        [options]="barChartOptions"
-      ></canvas> -->
+      <div style="text-align: center">
+        <h2>Distribuzione delle chiavi</h2>
+        <canvas
+          baseChart
+          [datasets]="barChartData"
+          [labels]="barChartLabels"
+          [options]="barChartOptions"
+          [chartType]="barChartType"
+        >
+        </canvas>
+      </div>
       <p>Distribuzione Valori</p>
     </div>
   </div>
-
-  <!-- Terza RIGA: Log -->
   <div class="row log-section">
     <h3>Log</h3>
-    <ul>
-      <li *ngFor="let log of logs">{{ log }}</li>
-    </ul>
+    @for (item of data.logs; track $index) {
+    {{ item.payload }} {{ item.creation_datetime | date : "dd/MM/yyyy HH:mm" }}
+    }
   </div>
+  }
 </div>
