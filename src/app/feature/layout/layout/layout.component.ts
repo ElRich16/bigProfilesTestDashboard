@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
@@ -16,8 +17,8 @@ import {
 } from '../../../models/models';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import Chart from 'chart.js/auto';
 
-import { Color } from '@swimlane/ngx-charts';
 @Component({
   selector: 'app-layout',
   standalone: true,
@@ -26,7 +27,7 @@ import { Color } from '@swimlane/ngx-charts';
   styleUrls: ['./layout.component.scss'],
   providers: [DataService],
 })
-export class LayoutComponent implements OnInit {
+export class LayoutComponent implements OnInit, AfterViewInit {
   data$: BehaviorSubject<PageModel> = new BehaviorSubject<PageModel>({
     averageResponseTime: 0,
     totalRequests: 0,
@@ -38,7 +39,14 @@ export class LayoutComponent implements OnInit {
   logs: Log[] = [];
   formSubmitted: boolean = false;
   totalErrors: number = 0;
+  keyDistributionChart: Chart | null = null;
+  timeLineChart: Chart | null = null;
   constructor(private service: DataService, private cdr: ChangeDetectorRef) {}
+  ngAfterViewInit(): void {
+    this.createKeyDistributionChart();
+    this.createChartPie();
+    //() this.createTimeLineChart();
+  }
 
   ngOnInit(): void {}
 
@@ -58,21 +66,28 @@ export class LayoutComponent implements OnInit {
     // }
   }
 
-  // Metodo per fare la chiamata all'API tramite il servizio
+  // Method for call API
   fetchData(startDate: Date, endDate: Date): void {
     this.service
       .getDatas(startDate, endDate)
       .pipe(map((r) => this.computePage(r)))
-      .subscribe(
-        (model: PageModel) => {
+      .subscribe({
+        next: (model: PageModel) => {
           this.data$.next(model);
           this.cdr.detectChanges();
           console.log('Dati aggiornati:', model);
+
+          this.createKeyDistributionChart();
+          this.createChartPie();
+          this.createTimeLineChart(startDate, endDate);
         },
-        (error: any) => {
+        error: (error: any) => {
           console.error('Errore durante la chiamata all’API:', error);
-        }
-      );
+        },
+        complete: () => {
+          console.log('Chiamata API completata.');
+        },
+      });
   }
 
   computePage(resp: ValueResponse): PageModel {
@@ -111,30 +126,13 @@ export class LayoutComponent implements OnInit {
     };
   }
 
-  // Opzioni del grafico
-  view: [number, number] = [700, 400]; // Dimensioni del grafico
-
-  // Opzioni di stile
-  showXAxis = true;
-  showYAxis = true;
-  gradient = false;
-  showLegend = true;
-  showXAxisLabel = true;
-  xAxisLabel = 'Chiavi';
-  showYAxisLabel = true;
-  yAxisLabel = 'Numero di chiamate';
-  colorScheme: Color = {
-    domain: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
-    name: '',
-    selectable: false,
-    group: ScaleType.Time,
-  };
-
   barChartLabels: string[] = ['1', '2', '3', '4', '5', '6'];
 
   barChartData = [
     {
-      data: [132679, 126740, 145390, 136477, 144294, 116563],
+      data: this.data$.subscribe((res) => {
+        console.log('key distribu', res.ketyDistribution);
+      }),
       label: 'Numero di chiamate',
       backgroundColor: [
         'rgba(255, 99, 132, 0.6)',
@@ -156,7 +154,7 @@ export class LayoutComponent implements OnInit {
     },
   ];
 
-  // Opzioni del grafico
+  // chart options
   barChartOptions = {
     responsive: true,
     scales: {
@@ -165,6 +163,199 @@ export class LayoutComponent implements OnInit {
     },
   };
 
-  // Tipo di grafico
   barChartType: any = 'bar';
+  // method for create graphic for key distribution in call
+  createKeyDistributionChart(): void {
+    const ketyDistributionCanvas = document.getElementById(
+      'myChart'
+    ) as HTMLCanvasElement;
+
+    const labels = Object.keys(this.data$.value.ketyDistribution);
+    const values = Object.values(this.data$.value.ketyDistribution);
+
+    if (this.keyDistributionChart) {
+      this.keyDistributionChart.destroy(); // destroy
+    }
+
+    this.keyDistributionChart = new Chart(ketyDistributionCanvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Numero di chiamate',
+            data: values,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.6)',
+              'rgba(54, 162, 235, 0.6)',
+              'rgba(255, 206, 86, 0.6)',
+              'rgba(75, 192, 192, 0.6)',
+              'rgba(153, 102, 255, 0.6)',
+              'rgba(255, 159, 64, 0.6)',
+            ],
+            borderColor: [
+              'rgba(255, 99, 132, 1)',
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 159, 64, 1)',
+            ],
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            beginAtZero: true,
+          },
+          y: {
+            beginAtZero: true,
+          },
+        },
+      },
+    });
+  }
+  // pie for errors
+  createChartPie(): void {
+    const pieErrorCanvas = document.getElementById(
+      'myPieChart'
+    ) as HTMLCanvasElement;
+
+    // Calcola la percentuale degli errori
+    const totalErrors = this.data$.value.totalErrors;
+    const totalRequests = this.data$.value.totalRequests;
+    const successfulRequests = totalRequests - totalErrors;
+
+    if (totalRequests === 0) {
+      console.warn('Non ci sono chiamate totali. Grafico non creato.');
+      return; // Evita di creare il grafico se non ci sono dati
+    }
+
+    const errorPercentage = (totalErrors / totalRequests) * 100;
+    const successPercentage = (successfulRequests / totalRequests) * 100;
+
+    if (this.keyDistributionChart) {
+      this.keyDistributionChart.destroy();
+    }
+
+    new Chart(pieErrorCanvas, {
+      type: 'pie',
+      data: {
+        labels: ['Errori', 'Successi'], // Etichette per il grafico
+        datasets: [
+          {
+            label: 'Percentuale di errori vs successi',
+            data: [errorPercentage, successPercentage], // Dati
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.6)', // Colore per gli errori
+              'rgba(54, 162, 235, 0.6)', // Colore per i successi
+            ],
+            borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)'],
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true, // Adatta il grafico alla dimensione della finestra
+        plugins: {
+          legend: {
+            display: true, // Mostra la legenda
+            position: 'top', // Posizione della legenda
+          },
+          tooltip: {
+            enabled: true, // Tooltip al passaggio del mouse
+            callbacks: {
+              label: function (context) {
+                const label = context.label || '';
+                const value = context.raw as number;
+                return `${label}: ${value.toFixed(2)}%`; // Mostra la percentuale con due decimali
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  createTimeLineChart(startDate: Date, endDate: Date): void {
+    const timeLine = document.getElementById(
+      'myLineChart'
+    ) as HTMLCanvasElement;
+
+    if (this.timeLineChart) {
+      this.timeLineChart.destroy(); // Distruggi il grafico esistente se necessario
+    }
+
+    // Genera le date tra startDate e endDate
+    const labels = this.generateDateLabels(startDate, endDate);
+
+    // Sostituisci con dati reali, se disponibili
+    const dataValues = labels.map(() => Math.floor(Math.random() * 50)); // Dati simulati
+
+    this.timeLineChart = new Chart(timeLine, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Chiamate nel tempo',
+            data: dataValues,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            fill: true,
+            tension: 0.4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+          },
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: `Timeline: ${startDate.toISOString()} - ${endDate.toISOString()}`,
+              color: '#007bff',
+              font: {
+                size: 14,
+                weight: 'bold',
+              },
+            },
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Conteggio',
+              color: '#007bff',
+              font: {
+                size: 14,
+                weight: 'bold',
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  generateDateLabels(startDate: Date, endDate: Date): string[] {
+    const labels: string[] = [];
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      labels.push(currentDate.toISOString().slice(0, 16).replace('T', ' ')); // Formatta la data
+      currentDate.setHours(currentDate.getHours() + 1); // Incrementa di 1 ora
+    }
+
+    return labels;
+  }
 }

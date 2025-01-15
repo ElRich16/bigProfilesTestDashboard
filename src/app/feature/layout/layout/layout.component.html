@@ -20,7 +20,7 @@
     />
   </div>
   @if(data$ | async; as data) {
-  <div>{{ data | json }}</div>
+  <!-- <div>{{ data | json }}</div> -->
   <!-- Seconda RIGA: Grafici e recap -->
   <div class="row charts-recap-section">
     <div class="stat-box">
@@ -35,33 +35,22 @@
       <h3>Tempo Risposta Medio</h3>
       <p>{{ data.averageResponseTime }}</p>
     </div>
+  </div>
+  <div class="row charts-recap-section">
     <div class="chart">
-      <!-- <canvas
-        chartjs
-        [data]="lineChartData"
-        [options]="lineChartOptions"
-      ></canvas> -->
+      <canvas id="myLineChart" width="400" height="200"></canvas>
       <p>Chiamate nel tempo</p>
     </div>
     <div class="chart">
-      <!-- <canvas
-        chartjs
-        [data]="pieChartData"
-        [options]="pieChartOptions"
-      ></canvas> -->
+      <canvas id="myPieChart" width="400" height="400"></canvas>rtOptions"
+
       <p>Percentuale Errori</p>
     </div>
     <div class="chart">
       <div style="text-align: center">
         <h2>Distribuzione delle chiavi</h2>
-        <canvas
-          baseChart
-          [datasets]="barChartData"
-          [labels]="barChartLabels"
-          [options]="barChartOptions"
-          [chartType]="barChartType"
-        >
-        </canvas>
+
+        <canvas id="myChart" width="400" height="200"></canvas>
       </div>
       <p>Distribuzione Valori</p>
     </div>
