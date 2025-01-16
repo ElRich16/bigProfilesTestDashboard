@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+  mongo:
+    image: "mongo:4.0.24-xenial"
+
+  restore:
+    image: "mongo:4.0.24-xenial"
+    volumes:
+      - ./database/bigprfiles-api-test.gz:/var/dump/bigprfiles-api-test.gz
+    links:
+      - mongo:mongo
+    command: mongorestore --gzip --drop --archive=/var/dump/bigprfiles-api-test.gz --host mongo:27017
+
+  backend:
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+    image: bigprofilesdocker/bigprofiles-api-test:latest
+    ports:
+      - "8000:8000"
+    #command: [ "sh", "start_application.sh" ]
+    command:
+      [
+        "gunicorn",
+        "--log-level",
+        "INFO",
+        "-b",
+        "0.0.0.0:8000",
+        "-w",
+        "1",
+        "-k",
+        "uvicorn.workers.UvicornWorker",
+        "app.main:app",
+      ]
+    volumes:
+      - "./backend/start_docker.sh:/bigprofiles/start_application.sh"
+  frontend:
+    # image: frontend
+    build: frontend
+    ports:
+      - "4200:4200"
