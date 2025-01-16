@@ -1,12 +1,5 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnInit,
-} from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { DataService } from '../../../services/data.service';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   AggregatedValue,
   KeyDistribution,
@@ -17,18 +10,21 @@ import {
 } from '../../../models/models';
 import { BehaviorSubject, map } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import Chart, { ChartConfiguration, ChartType } from 'chart.js/auto';
+import Chart, { ChartConfiguration } from 'chart.js/auto';
 import { BaseChartDirective } from 'ng2-charts';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, CommonModule, BaseChartDirective],
+  imports: [CommonModule, BaseChartDirective],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'],
   providers: [DataService],
 })
-export class LayoutComponent implements OnInit, AfterViewInit {
+export class LayoutComponent {
+  /**
+   * Holds the current state of the page model as a reactive subject.
+   */
   data$: BehaviorSubject<PageModel> = new BehaviorSubject<PageModel>({
     averageResponseTime: 0,
     totalRequests: 0,
@@ -37,27 +33,54 @@ export class LayoutComponent implements OnInit, AfterViewInit {
     logs: [],
     totalErrors: 0,
   });
+  totale: number = 0;
+  /**
+   * List of logs fetched from the API.
+   */
   logs: Log[] = [];
+
+  /**
+   * Tracks whether the form has been submitted.
+   */
   formSubmitted: boolean = false;
+
+  /**
+   * Total number of errors retrieved from the API.
+   */
   totalErrors: number = 0;
+
+  /**
+   * Chart instance for key distribution data.
+   */
   keyDistributionChart: Chart | null = null;
+
+  /**
+   * Chart instance for time distribution data.
+   */
   timeLineChart: Chart | null = null;
+
+  /**
+   * Constructor to inject the required services.
+   * @param service Data service to handle API calls.
+   * @param cdr ChangeDetectorRef to manually trigger change detection.
+   */
   constructor(private service: DataService, private cdr: ChangeDetectorRef) {}
-  ngAfterViewInit(): void {
-    // this.createKeyDistributionChart();
-    // this.createChartPie();
-    //() this.createTimeLineChart();
-  }
 
-  ngOnInit(): void {}
-
+  /**
+   * Updates the date range and fetches data for the specified range.
+   * @param from Input element for the start date.
+   * @param to Input element for the end date.
+   */
   changeDateRange(from: HTMLInputElement, to: HTMLInputElement): void {
-    console.log(from.value, to.value);
     if (!from.value || !to.value) return;
     this.fetchData(new Date(from.value), new Date(to.value));
   }
 
-  // Method for call API
+  /**
+   * Fetches data from the API within the specified date range.
+   * @param startDate The start date for the data request.
+   * @param endDate The end date for the data request.
+   */
   fetchData(startDate: Date, endDate: Date): void {
     this.service
       .getDatas(startDate, endDate)
@@ -65,23 +88,28 @@ export class LayoutComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (model: PageModel) => {
           this.data$.next(model);
-          this.cdr.detectChanges();
-          console.log('Dati aggiornati:', model);
         },
         error: (error: any) => {
           console.error('Errore durante la chiamata all’API:', error);
         },
-        complete: () => {
-          console.log('Chiamata API completata.');
-        },
       });
   }
 
+  /**
+   * Computes the page model from the API response.
+   * @param resp The response object from the API.
+   * @returns The calculated PageModel.
+   */
   computePage(resp: ValueResponse): PageModel {
+    console.log('resp ', resp);
     const totalRequests = resp.values.reduce(
       (acc: number, curr: AggregatedValue) => acc + curr.total_requests,
       0
     );
+    console.log('totale request', totalRequests);
+    this.totale = totalRequests;
+    console.log('totale', this.totale);
+    // this.cdr.detectChanges();
     return {
       logs: resp.logs,
       totalErrors: resp.values.reduce(
@@ -113,12 +141,16 @@ export class LayoutComponent implements OnInit, AfterViewInit {
     };
   }
 
-  // chart for key distribution
+  /**
+   * Generates chart data for key distribution.
+   * @param kd The key distribution data.
+   * @returns The chart configuration data.
+   */
   keyDistributionChartData(kd: KeyDistribution): ChartConfiguration['data'] {
     return {
       datasets: [
         {
-          label: 'Time Distribution',
+          label: 'Key Distribution',
           data: Object.values(kd),
           backgroundColor: [
             'rgba(25, 79, 166, 0.2)',
@@ -133,16 +165,21 @@ export class LayoutComponent implements OnInit, AfterViewInit {
       labels: Object.keys(kd),
     };
   }
-  // chart for time distribution
+
+  /**
+   * Generates chart data for time distribution.
+   * @param td The time distribution data.
+   * @returns The chart configuration data.
+   */
   timeDistributionChartData(td: TimeDistribution): ChartConfiguration['data'] {
     const formattedLabels = Object.keys(td).map((key) => {
       const date = new Date(key);
-      return new Intl.DateTimeFormat('en-US', {
-        month: 'short', // Mese abbreviato (es. "Jan", "Feb")
-        day: '2-digit', // Giorno a due cifre
-        year: 'numeric', // Anno completo
-        hour: '2-digit', // Ore a due cifre
-        minute: '2-digit', // Minuti a due cifre
+      return new Intl.DateTimeFormat('it-IT', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       }).format(date);
     });
 
@@ -159,13 +196,19 @@ export class LayoutComponent implements OnInit, AfterViewInit {
       labels: formattedLabels,
     };
   }
-  // chart for pie error
+
+  /**
+   * Generates chart data for error and success distribution.
+   * @param totErr The total number of errors.
+   * @param totReq The total number of requests.
+   * @returns The chart configuration data.
+   */
   pieDistributionChartData(
     totErr: number,
     totReq: number
   ): ChartConfiguration['data'] {
-    const errorPercentage = (totErr / totReq) * 100;
-    const successPercentage = ((totReq - totErr) / totReq) * 100;
+    const errorPercentage = Math.round((totErr / totReq) * 10000) / 100;
+    const successPercentage = 100 - errorPercentage;
     return {
       datasets: [
         {
@@ -174,12 +217,16 @@ export class LayoutComponent implements OnInit, AfterViewInit {
           backgroundColor: ['rgba(215, 22, 48, 0.6)', 'rgba(25, 79, 166, 0.2)'],
         },
       ],
-      labels: [errorPercentage, successPercentage],
+      labels: ['Errori', 'Successi'],
     };
   }
+
+  /**
+   * Toggles the visibility of a dropdown menu.
+   * @param menuId The ID of the dropdown menu element.
+   */
   toggleDropdown(menuId: string): void {
     const menu = document.getElementById(menuId);
-    console.log('cliccasto', menu);
     if (menu) {
       menu.classList.toggle('active');
     }

@@ -53,11 +53,11 @@
     </div>
   </div>
   @if(data$ | async; as data) {
-
+  <!-- <pre> {{ data$ | async | json }} </pre> -->
   <div class="row charts-recap-section">
     <div class="stat-box">
       <h3>Total Call</h3>
-      <p>{{ data.totalRequests }}</p>
+      <p>{{ totale }}</p>
     </div>
     <div class="stat-box">
       <h3>Total Errors</h3>
@@ -68,6 +68,7 @@
       <p>{{ data.averageResponseTime }}</p>
     </div>
   </div>
+
   <div class="row charts-recap-section">
     <div class="chart">
       <canvas
@@ -87,7 +88,7 @@
         [type]="'pie'"
       >
       </canvas>
-      <p>Percentese Errors</p>
+      <p>Percentual Errors</p>
     </div>
     <div class="chart">
       <div style="text-align: center">
