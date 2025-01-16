@@ -101,15 +101,11 @@ export class LayoutComponent {
    * @returns The calculated PageModel.
    */
   computePage(resp: ValueResponse): PageModel {
-    console.log('resp ', resp);
     const totalRequests = resp.values.reduce(
       (acc: number, curr: AggregatedValue) => acc + curr.total_requests,
       0
     );
-    console.log('totale request', totalRequests);
     this.totale = totalRequests;
-    console.log('totale', this.totale);
-    // this.cdr.detectChanges();
     return {
       logs: resp.logs,
       totalErrors: resp.values.reduce(
