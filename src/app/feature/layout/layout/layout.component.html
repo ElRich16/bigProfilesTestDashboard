@@ -1,65 +1,121 @@
 <div class="dashboard">
-  <!-- Prima RIGA: Form -->
   <div class="row">
-    <p>Dashboard</p>
+    <div class="dashboard-header">
+      <img src="assets/logo_d.png" class="custom-logo" />
+      <p>Dashboard</p>
+      <div class="dashboard-icons">
+        <div class="dropdown">
+          <i
+            class="fas fa-user-circle"
+            title="Profilo"
+            (click)="toggleDropdown('profileMenu')"
+          ></i>
+          <div id="profileMenu" class="dropdown-menu">
+            <a href="/profile">Show profile</a>
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+        <!-- Icona profilo -->
+        <div class="dropdown">
+          <i
+            class="fas fa-cog"
+            title="Impostazioni"
+            (click)="toggleDropdown('settingsMenu')"
+          ></i>
+          <div id="settingsMenu" class="dropdown-menu">
+            <a href="/settings">Settings</a>
+            <a href="/help">User guide</a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="row form-section">
-    <label for="startDate">Data Inizio</label>
-    <input
-      #startDate
-      type="datetime-local"
-      id="startDate"
-      (change)="changeDateRange(startDate, endDate)"
-    />
-    <label for="endDate">Data Fine</label>
-    <input
-      #endDate
-      type="datetime-local"
-      id="endDate"
-      (change)="changeDateRange(startDate, endDate)"
-    />
+    <div class="date-input">
+      <label for="startDate">Start date</label>
+      <input
+        #startDate
+        type="datetime-local"
+        id="startDate"
+        class="input-date"
+        (change)="changeDateRange(startDate, endDate)"
+      />
+    </div>
+    <div class="date-input">
+      <label for="endDate">End date</label>
+      <input
+        #endDate
+        type="datetime-local"
+        id="endDate"
+        class="input-date"
+        (change)="changeDateRange(startDate, endDate)"
+      />
+    </div>
   </div>
   @if(data$ | async; as data) {
-  <!-- <div>{{ data | json }}</div> -->
-  <!-- Seconda RIGA: Grafici e recap -->
+
   <div class="row charts-recap-section">
     <div class="stat-box">
-      <h3>Chiamate Totali</h3>
+      <h3>Total Call</h3>
       <p>{{ data.totalRequests }}</p>
     </div>
     <div class="stat-box">
-      <h3>Errori Totali</h3>
+      <h3>Total Errors</h3>
       <p>{{ data.totalErrors }}</p>
     </div>
     <div class="stat-box">
-      <h3>Tempo Risposta Medio</h3>
+      <h3>Average response time</h3>
       <p>{{ data.averageResponseTime }}</p>
     </div>
   </div>
   <div class="row charts-recap-section">
     <div class="chart">
-      <canvas id="myLineChart" width="400" height="200"></canvas>
-      <p>Chiamate nel tempo</p>
+      <canvas
+        baseChart
+        [data]="timeDistributionChartData(data.timeDistribution)"
+        [type]="'line'"
+      >
+      </canvas>
+      <p>Timeline Call</p>
     </div>
+  </div>
+  <div class="row charts-recap-section">
     <div class="chart">
-      <canvas id="myPieChart" width="400" height="400"></canvas>rtOptions"
-
-      <p>Percentuale Errori</p>
+      <canvas
+        baseChart
+        [data]="pieDistributionChartData(data.totalErrors, data.totalRequests)"
+        [type]="'pie'"
+      >
+      </canvas>
+      <p>Percentese Errors</p>
     </div>
     <div class="chart">
       <div style="text-align: center">
-        <h2>Distribuzione delle chiavi</h2>
-
-        <canvas id="myChart" width="400" height="200"></canvas>
+        <h2>Key distribution</h2>
+        <canvas
+          baseChart
+          [data]="keyDistributionChartData(data.ketyDistribution)"
+          [type]="'bar'"
+        >
+        </canvas>
       </div>
-      <p>Distribuzione Valori</p>
+      <p>Value Distribution</p>
     </div>
   </div>
   <div class="row log-section">
     <h3>Log</h3>
-    @for (item of data.logs; track $index) {
-    {{ item.payload }} {{ item.creation_datetime | date : "dd/MM/yyyy HH:mm" }}
-    }
+    <div class="logs-container">
+      @for (item of data.logs; track $index) {
+      <div class="log-row">
+        <div class="log-left">
+          {{ item.payload }}
+        </div>
+        <div class="log-right">
+          {{ item.creation_datetime | date : "dd/MM/yyyy HH:mm" }}
+        </div>
+      </div>
+      }
+    </div>
   </div>
   }
 </div>
