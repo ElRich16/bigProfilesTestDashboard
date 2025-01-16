@@ -57,7 +57,7 @@
   <div class="row charts-recap-section">
     <div class="stat-box">
       <h3>Total Call</h3>
-      <p>{{ totale }}</p>
+      <p>{{ data.totalRequests }}</p>
     </div>
     <div class="stat-box">
       <h3>Total Errors</h3>
@@ -65,30 +65,30 @@
     </div>
     <div class="stat-box">
       <h3>Average response time</h3>
-      <p>{{ data.averageResponseTime }}</p>
+      <p>{{ round(data.averageResponseTime, 3) }} ms</p>
     </div>
   </div>
 
   <div class="row charts-recap-section">
     <div class="chart">
+      <h2>Timeline Call</h2>
       <canvas
         baseChart
         [data]="timeDistributionChartData(data.timeDistribution)"
         [type]="'line'"
       >
       </canvas>
-      <p>Timeline Call</p>
     </div>
   </div>
   <div class="row charts-recap-section">
     <div class="chart">
+      <h2>Percentual Errors</h2>
       <canvas
         baseChart
         [data]="pieDistributionChartData(data.totalErrors, data.totalRequests)"
         [type]="'pie'"
       >
       </canvas>
-      <p>Percentual Errors</p>
     </div>
     <div class="chart">
       <div style="text-align: center">
@@ -100,7 +100,6 @@
         >
         </canvas>
       </div>
-      <p>Value Distribution</p>
     </div>
   </div>
   <div class="row log-section">

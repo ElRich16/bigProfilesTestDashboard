@@ -3,14 +3,13 @@ import { DataService } from '../../../services/data.service';
 import {
   AggregatedValue,
   KeyDistribution,
-  Log,
   PageModel,
   TimeDistribution,
   ValueResponse,
 } from '../../../models/models';
 import { BehaviorSubject, map } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import Chart, { ChartConfiguration } from 'chart.js/auto';
+import { ChartConfiguration } from 'chart.js/auto';
 import { BaseChartDirective } from 'ng2-charts';
 
 @Component({
@@ -33,38 +32,12 @@ export class LayoutComponent {
     logs: [],
     totalErrors: 0,
   });
-  totale: number = 0;
-  /**
-   * List of logs fetched from the API.
-   */
-  logs: Log[] = [];
-
-  /**
-   * Tracks whether the form has been submitted.
-   */
-  formSubmitted: boolean = false;
-
-  /**
-   * Total number of errors retrieved from the API.
-   */
-  totalErrors: number = 0;
-
-  /**
-   * Chart instance for key distribution data.
-   */
-  keyDistributionChart: Chart | null = null;
-
-  /**
-   * Chart instance for time distribution data.
-   */
-  timeLineChart: Chart | null = null;
 
   /**
    * Constructor to inject the required services.
    * @param service Data service to handle API calls.
-   * @param cdr ChangeDetectorRef to manually trigger change detection.
    */
-  constructor(private service: DataService, private cdr: ChangeDetectorRef) {}
+  constructor(private service: DataService) {}
 
   /**
    * Updates the date range and fetches data for the specified range.
@@ -105,7 +78,6 @@ export class LayoutComponent {
       (acc: number, curr: AggregatedValue) => acc + curr.total_requests,
       0
     );
-    this.totale = totalRequests;
     return {
       logs: resp.logs,
       totalErrors: resp.values.reduce(
@@ -143,22 +115,26 @@ export class LayoutComponent {
    * @returns The chart configuration data.
    */
   keyDistributionChartData(kd: KeyDistribution): ChartConfiguration['data'] {
+    const backgroundColors = [
+      'rgba(25, 79, 166, 0.2)',
+      'rgba(54, 162, 235, 0.6)',
+      'rgba(255, 86, 97, 0.6)',
+      'rgba(75, 192, 192, 0.6)',
+      'rgba(153, 102, 255, 0.6)',
+      'rgba(255, 159, 64, 0.6)',
+    ];
+
+    const data = Object.keys(kd).map((key, index) => {
+      return {
+        label: key,
+        data: [kd[Number(key)]],
+        backgroundColor: backgroundColors[index % backgroundColors.length],
+      };
+    });
+
     return {
-      datasets: [
-        {
-          label: 'Key Distribution',
-          data: Object.values(kd),
-          backgroundColor: [
-            'rgba(25, 79, 166, 0.2)',
-            'rgba(54, 162, 235, 0.6)',
-            'rgba(255, 86, 97, 0.6)',
-            'rgba(75, 192, 192, 0.6)',
-            'rgba(153, 102, 255, 0.6)',
-            'rgba(255, 159, 64, 0.6)',
-          ],
-        },
-      ],
-      labels: Object.keys(kd),
+      datasets: [...data],
+      labels: ['key'],
     };
   }
 
@@ -226,5 +202,9 @@ export class LayoutComponent {
     if (menu) {
       menu.classList.toggle('active');
     }
+  }
+
+  round(v: number, pos: number): number {
+    return Math.round(v * Math.pow(10, pos)) / Math.pow(10, pos);
   }
 }
